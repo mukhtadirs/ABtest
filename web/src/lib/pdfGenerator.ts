@@ -6,15 +6,13 @@ import { formatP, formatPctSmart, formatCounts } from './format';
 export async function generatePDFReport(result: DecisionResult, metric: Metric): Promise<void> {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
   
   // Colors (RGB values for jsPDF)
-  const primaryBlue = [79, 70, 229];
-  const darkGray = [55, 65, 81];
-  const lightGray = [107, 114, 128];
-  const successGreen = [5, 150, 105];
-  const warningAmber = [217, 119, 6];
-  const lightBackground = [248, 250, 252];
+  const primaryBlue = [79, 70, 229] as const;
+  const darkGray = [55, 65, 81] as const;
+  const lightGray = [107, 114, 128] as const;
+  const successGreen = [5, 150, 105] as const;
+  const warningAmber = [217, 119, 6] as const;
   
   // Current date
   const currentDate = new Date().toLocaleDateString('en-US', {
@@ -27,12 +25,12 @@ export async function generatePDFReport(result: DecisionResult, metric: Metric):
   
   // Header Section with ECCENTRIC logo
   pdf.setFontSize(20);
-  pdf.setTextColor(...darkGray);
+  pdf.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
   pdf.setFont('helvetica', 'bold');
   pdf.text('ECCENTRIC', 20, yPos);
   
   pdf.setFontSize(10);
-  pdf.setTextColor(...lightGray);
+  pdf.setTextColor(lightGray[0], lightGray[1], lightGray[2]);
   pdf.setFont('helvetica', 'normal');
   pdf.text(currentDate, pageWidth - 20, yPos, { align: 'right' });
   
@@ -40,7 +38,7 @@ export async function generatePDFReport(result: DecisionResult, metric: Metric):
   
   // Main Title
   pdf.setFontSize(18);
-  pdf.setTextColor(...primaryBlue);
+  pdf.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
   pdf.setFont('helvetica', 'bold');
   pdf.text('A/B Test Results Summary', 20, yPos);
   
@@ -49,180 +47,138 @@ export async function generatePDFReport(result: DecisionResult, metric: Metric):
   // Key Results Section
   const isSig = result.significant;
   const topName = result.winner ?? result.leader;
+  const metricNoun = metric === 'ctr' ? 'CTR' : 'conversion rate';
   const isTie = !topName;
-  const metricNoun = metric === "ctr" ? "CTR" : "conversion rate";
   
-  // Winner/Leader announcement with background
-  if (isSig) {
-    pdf.setFillColor(240, 253, 244); // Light green
-  } else if (isTie) {
-    pdf.setFillColor(239, 246, 255); // Light blue
-  } else {
-    pdf.setFillColor(254, 243, 199); // Light amber
-  }
+  // Results badge color
+  const badgeColor = isSig ? successGreen : warningAmber;
   
+  // Key finding box
+  pdf.setFillColor(248, 250, 252); // Light background
   pdf.rect(20, yPos - 5, pageWidth - 40, 25, 'F');
   
   pdf.setFontSize(14);
-  if (isSig) {
-    pdf.setTextColor(...successGreen);
-  } else if (isTie) {
-    pdf.setTextColor(...primaryBlue);
-  } else {
-    pdf.setTextColor(...warningAmber);
-  }
+  pdf.setTextColor(badgeColor[0], badgeColor[1], badgeColor[2]);
   pdf.setFont('helvetica', 'bold');
   
-  if (isTie) {
-    pdf.text('RESULT: Equal Performance Detected', 25, yPos + 5);
-  } else {
-    const status = isSig ? 'WINNER' : 'LEADING';
-    pdf.text(`RESULT: ${status} - Variant ${topName}`, 25, yPos + 5);
-  }
+  const headline = isTie 
+    ? 'Equal Performance Detected' 
+    : (isSig ? `Variant ${topName} is the Winner` : `Variant ${topName} is Leading`);
   
-  // Performance details
+  pdf.text(headline, 25, yPos + 5);
+  
+  pdf.setFontSize(10);
+  pdf.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+  pdf.setFont('helvetica', 'normal');
+  
   if (!isTie) {
     const topVariant = result.variants.find(v => v.name === topName);
+    const control = result.variants[0];
     if (topVariant) {
-      pdf.setFontSize(12);
-      pdf.setTextColor(...darkGray);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Performance: ${formatPctSmart(topVariant.rate)} ${metricNoun}`, 25, yPos + 12);
+      const subheadline = `${formatPctSmart(topVariant.rate)} ${metricNoun}, vs ${formatPctSmart(control.rate)} for Control`;
+      pdf.text(subheadline, 25, yPos + 12);
     }
   }
-  
-  // Statistical significance
-  pdf.setFontSize(10);
-  pdf.setTextColor(...lightGray);
-  const sigText = isSig ? `Significant (p = ${formatP(result.pValue)})` : `Not significant (p = ${formatP(result.pValue)})`;
-  pdf.text(sigText, 25, yPos + 18);
   
   yPos += 35;
   
-  // Results Table
-  pdf.setFontSize(14);
-  pdf.setTextColor(...darkGray);
+  // Test Details
+  pdf.setFontSize(12);
+  pdf.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Test Results', 20, yPos);
+  pdf.text('Test Details', 20, yPos);
   
   yPos += 10;
   
-  // Table headers with background
-  pdf.setFillColor(...lightBackground);
-  pdf.rect(20, yPos - 5, pageWidth - 40, 8, 'F');
-  
   pdf.setFontSize(10);
-  pdf.setTextColor(...lightGray);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`Statistical Test: ${result.testName}`, 25, yPos);
+  yPos += 6;
+  pdf.text(`P-Value: ${formatP(result.pValue)}`, 25, yPos);
+  yPos += 6;
+  pdf.text(`Significance Level: α = 0.05`, 25, yPos);
+  yPos += 6;
+  pdf.text(`Result: ${isSig ? 'Statistically Significant' : 'Not Statistically Significant'}`, 25, yPos);
+  
+  yPos += 20;
+  
+  // Variant Performance Table
+  pdf.setFontSize(12);
+  pdf.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Variant Performance', 20, yPos);
+  
+  yPos += 15;
+  
+  // Table headers
+  pdf.setFontSize(10);
   pdf.setFont('helvetica', 'bold');
   pdf.text('Variant', 25, yPos);
-  pdf.text('Performance', 70, yPos);
-  pdf.text('Traffic', 120, yPos);
-  pdf.text('Results', 160, yPos);
+  pdf.text('Performance', 55, yPos);
+  pdf.text('Count', 95, yPos);
+  pdf.text('Confidence Interval', 125, yPos);
   
-  yPos += 12;
+  yPos += 8;
   
-  // Sort variants alphabetically
-  const sortedVariants = result.variants.sort((a, b) => a.name.localeCompare(b.name));
-  const controlName = result.variants[0]?.name ?? "A";
+  // Table rows
+  const sortedVariants = [...result.variants].sort((a, b) => a.name.localeCompare(b.name));
   
-  sortedVariants.forEach((variant, index) => {
-    const isControl = variant.name === controlName;
-    const isTop = !isTie && variant.name === topName;
+  sortedVariants.forEach((variant) => {
+    pdf.setFont('helvetica', 'normal');
     
-    // Highlight top performer
-    if (isTop) {
-      if (isSig) {
-        pdf.setFillColor(240, 253, 244); // Light green
-      } else {
-        pdf.setFillColor(254, 249, 195); // Light amber
-      }
-      pdf.rect(20, yPos - 5, pageWidth - 40, 8, 'F');
+    // Highlight winner/leader
+    if (variant.name === topName && !isTie) {
+      pdf.setTextColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+      pdf.setFont('helvetica', 'bold');
+    } else {
+      pdf.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
     }
     
-    pdf.setFontSize(10);
-    pdf.setTextColor(...darkGray);
-    pdf.setFont('helvetica', isTop ? 'bold' : 'normal');
-    
-    // Variant name
-    const variantText = isControl ? `${variant.name} (control)` : variant.name;
-    pdf.text(variantText, 25, yPos);
-    
-    // Performance
-    pdf.text(formatPctSmart(variant.rate), 70, yPos);
-    
-    // Traffic
-    pdf.text(variant.traffic.toString(), 120, yPos);
-    
-    // Results
-    const resultsText = `${formatCounts(variant.successes, variant.traffic)} ${metric === "ctr" ? "clicks" : "conversions"}`;
-    pdf.text(resultsText, 160, yPos);
+    pdf.text(variant.name, 25, yPos);
+    pdf.text(formatPctSmart(variant.rate), 55, yPos);
+    pdf.text(formatCounts(variant.successes, variant.traffic), 95, yPos);
+    pdf.text(`${formatPctSmart(variant.ciLow)} - ${formatPctSmart(variant.ciHigh)}`, 125, yPos);
     
     yPos += 8;
   });
   
   yPos += 15;
   
-  // Statistical Details
+  // Recommendations Section
   pdf.setFontSize(12);
-  pdf.setTextColor(...darkGray);
+  pdf.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Statistical Analysis', 20, yPos);
+  pdf.text('Recommendations', 20, yPos);
   
-  yPos += 8;
+  yPos += 10;
   
   pdf.setFontSize(10);
-  pdf.setTextColor(...lightGray);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(`Test Method: ${result.testName}`, 20, yPos);
   
-  yPos += 6;
-  pdf.text(`Confidence Level: 95% (alpha = 0.05)`, 20, yPos);
+  let recommendation: string;
+  if (isTie) {
+    recommendation = 'Variants are performing equally. Consider running the test longer or try different variants.';
+  } else if (isSig) {
+    recommendation = `Implement Variant ${topName}. The results are statistically significant with p = ${formatP(result.pValue)}.`;
+  } else {
+    recommendation = `Continue testing. While Variant ${topName} is leading, more data is needed for statistical significance (p = ${formatP(result.pValue)}).`;
+  }
   
-  yPos += 6;
-  pdf.text(`P-Value: ${formatP(result.pValue)}`, 20, yPos);
+  const lines = pdf.splitTextToSize(recommendation, pageWidth - 50);
+  lines.forEach((line: string) => {
+    pdf.text(line, 25, yPos);
+    yPos += 6;
+  });
   
   yPos += 15;
   
-  // Recommendation Section
-  if (isTie) {
-    pdf.setFillColor(239, 246, 255); // Light blue
-  } else if (isSig) {
-    pdf.setFillColor(240, 253, 244); // Light green
-  } else {
-    pdf.setFillColor(254, 243, 199); // Light amber
-  }
-  pdf.rect(20, yPos - 5, pageWidth - 40, 25, 'F');
-  
-  pdf.setFontSize(12);
-  pdf.setTextColor(...darkGray);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('RECOMMENDATION', 25, yPos + 3);
-  
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
-  
-  let recommendation = '';
-  if (isTie) {
-    recommendation = 'No clear winner detected. Consider other factors such as implementation cost and complexity, or continue collecting data to identify a statistically significant difference.';
-  } else if (isSig) {
-    recommendation = `Implement Variant ${topName} for all traffic. The results show a statistically significant improvement over the control variant.`;
-  } else {
-    recommendation = `Continue testing. Variant ${topName} shows promise but requires additional data to establish statistical significance before making a decision.`;
-  }
-  
-  // Split long text into multiple lines
-  const splitText = pdf.splitTextToSize(recommendation, pageWidth - 50);
-  pdf.text(splitText, 25, yPos + 10);
-  
-  yPos += Math.max(20, splitText.length * 4 + 10);
-  
   // Footer
   pdf.setFontSize(8);
-  pdf.setTextColor(...lightGray);
-  pdf.text(`Generated by A/B Test Advisor on ${currentDate}`, 20, pageHeight - 15);
-  pdf.text('ECCENTRIC', pageWidth - 20, pageHeight - 15, { align: 'right' });
+  pdf.setTextColor(lightGray[0], lightGray[1], lightGray[2]);
+  pdf.text('Generated by A/B Test Advisor', 20, 280);
+  pdf.text('https://a-btest.vercel.app', pageWidth - 20, 280, { align: 'right' });
   
-  // Save the PDF
-  const fileName = `ab-test-results-${new Date().toISOString().split('T')[0]}.pdf`;
+  // Download the PDF
+  const fileName = `AB_Test_Results_${new Date().toISOString().split('T')[0]}.pdf`;
   pdf.save(fileName);
 }

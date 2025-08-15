@@ -1,4 +1,4 @@
-import { formatP, formatPct, formatPctSmart, formatCounts, getRateBadgeColor } from "../lib/format";
+import { formatP, formatPctSmart, formatCounts, getRateBadgeColor } from "../lib/format";
 import type { DecisionResult } from "../lib/decision";
 import type { Metric } from "../App";
 import { generatePDFReport } from "../lib/pdfGenerator";
@@ -94,40 +94,48 @@ export function ResultsCard({ result, metric }: { result: DecisionResult; metric
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl p-6 shadow-lg">
-      {/* Header */}
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <div className="text-lg font-semibold tracking-tight flex items-center gap-2">
-            <span>{isTie ? "🤝" : (isSig ? "✅" : "⚠️")}</span>
-            <span>
+    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl p-4 sm:p-6 lg:p-8 shadow-lg">
+      {/* Header - Mobile Responsive */}
+      <div className="mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex-1">
+            <div className="text-lg sm:text-xl font-semibold tracking-tight flex items-center gap-2">
+              <span>{isTie ? "🤝" : (isSig ? "✅" : "⚠️")}</span>
+              <span className="leading-tight">
+                {isTie 
+                  ? "Equal performance detected" 
+                  : (isSig ? `Variant ${topName} is the winner` : `Variant ${topName} is leading`)
+                }
+              </span>
+            </div>
+            <p className="text-sm text-gray-700 mt-1 leading-relaxed">
               {isTie 
-                ? "Equal performance detected" 
-                : (isSig ? `Variant ${topName} is the winner` : `Variant ${topName} is leading`)
+                ? `Variants performing equally at ${formatPctSmart(topRow.rate)} ${metricNoun}`
+                : `${formatPctSmart(topRow.rate)} ${metricNoun}, vs ${formatPctSmart(rows.find(v => v.name === controlName)?.rate || 0)} for Control`
               }
-            </span>
+            </p>
           </div>
-          <p className="text-sm text-gray-700 mt-1">
-            {isTie 
-              ? `Variants performing equally at ${formatPctSmart(topRow.rate)} ${metricNoun}`
-              : `${formatPctSmart(topRow.rate)} ${metricNoun}, vs ${formatPctSmart(rows.find(v => v.name === controlName)?.rate || 0)} for Control`
-            }
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className={`text-xs px-3 py-2 rounded-full border whitespace-nowrap ${isSig ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-amber-300 bg-amber-50 text-amber-700"}`}>
-            {isSig ? `Significant (p = ${formatP(result.pValue)})` : `Not significant (p = ${formatP(result.pValue)})`}
+          
+          {/* Significance Badge - Always visible on mobile */}
+          <div className="flex items-center justify-between sm:justify-end gap-3">
+            <div className={`text-xs px-3 py-2 rounded-full border whitespace-nowrap ${isSig ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-amber-300 bg-amber-50 text-amber-700"}`}>
+              <span className="hidden sm:inline">{isSig ? `Significant (p = ${formatP(result.pValue)})` : `Not significant (p = ${formatP(result.pValue)})`}</span>
+              <span className="sm:hidden">{isSig ? `Significant` : `Not significant`}</span>
+            </div>
+            
+            {/* Download Button - Full width on mobile */}
+            <button
+              onClick={handleDownloadPDF}
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm min-w-0 whitespace-nowrap"
+              title="Download PDF Report"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-4-4m4 4l4-4m6 10.5a1.5 1.5 0 01-1.5 1.5h-16a1.5 1.5 0 01-1.5-1.5v-1.5a1.5 1.5 0 011.5-1.5h16a1.5 1.5 0 011.5 1.5v1.5z" />
+              </svg>
+              <span className="hidden sm:inline">Download Report</span>
+              <span className="sm:hidden">Download</span>
+            </button>
           </div>
-          <button
-            onClick={handleDownloadPDF}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-            title="Download PDF Report"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-4-4m4 4l4-4m6 10.5a1.5 1.5 0 01-1.5 1.5h-16a1.5 1.5 0 01-1.5-1.5v-1.5a1.5 1.5 0 011.5-1.5h16a1.5 1.5 0 011.5 1.5v1.5z" />
-            </svg>
-            Download Report
-          </button>
         </div>
       </div>
 

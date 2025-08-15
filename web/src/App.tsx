@@ -5,7 +5,7 @@ import { VariantTable } from "./components/VariantTable";
 import type { VariantRow } from "./components/VariantTable";
 import { ResultsCard } from "./components/ResultsCard";
 import { decide } from "./lib/decision";
-import { formatP, formatPct } from "./lib/format";
+// Removed unused imports
 
 export type Metric = "ctr" | "conversion";
 
@@ -97,13 +97,13 @@ export default function App() {
 
   return (
     <div 
-      className="max-w-6xl mx-auto px-4 py-10"
+      className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-10"
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
       <header className="mb-8">
-        <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 text-white p-6 shadow-md">
-          <h1 className="text-3xl font-semibold tracking-tight">A/B Test Advisor</h1>
+        <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 text-white p-4 sm:p-6 shadow-md">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">A/B Test Advisor</h1>
           <p className="text-sm/6 text-indigo-100 mt-1">
             Enter traffic and clicks/conversions to determine a winner or current leader.
           </p>
@@ -112,7 +112,7 @@ export default function App() {
 
       <main>
         <section 
-          className="bg-white/80 backdrop-blur border border-gray-200 rounded-xl p-5 shadow-sm mb-5"
+          className="bg-white/80 backdrop-blur border border-gray-200 rounded-xl p-4 sm:p-5 lg:p-6 shadow-sm mb-5"
           aria-labelledby="test-setup-heading"
         >
           <h2 id="test-setup-heading" className="sr-only">Test Setup</h2>
@@ -131,15 +131,15 @@ export default function App() {
             </div>
           )}
           
-          <div className="flex gap-3 mt-4">
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
             <button 
               onClick={onCompute} 
               disabled={isComputing}
-              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="flex-1 sm:flex-none px-4 py-3 sm:py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-base sm:text-sm font-medium"
               aria-describedby="compute-shortcut"
             >
               {isComputing ? (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -152,16 +152,18 @@ export default function App() {
             </button>
             <button 
               onClick={onReset} 
-              className="px-4 py-2 rounded-lg bg-white border hover:bg-gray-50 text-gray-800 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+              className="flex-1 sm:flex-none px-4 py-3 sm:py-2 rounded-lg bg-white border hover:bg-gray-50 text-gray-800 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 text-base sm:text-sm font-medium"
               aria-describedby="reset-shortcut"
             >
               Reset
             </button>
           </div>
           
-          <div className="text-xs text-gray-500 mt-2 space-x-4">
-            <span id="compute-shortcut">Tip: Press Cmd/Ctrl + Enter to compute</span>
-            <span id="reset-shortcut">Cmd/Ctrl + R to reset</span>
+          <div className="text-xs text-gray-500 mt-3 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-1 sm:space-y-0">
+              <span id="compute-shortcut">Tip: Press Cmd/Ctrl + Enter to compute</span>
+              <span id="reset-shortcut">Cmd/Ctrl + R to reset</span>
+            </div>
           </div>
         </section>
 

@@ -122,7 +122,7 @@ export function runQATests(): { passed: number; failed: number; results: any[] }
       results.push({
         testName: testCase.name,
         passed: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         expectedBehavior: testCase.expectedBehavior
       });
     }
